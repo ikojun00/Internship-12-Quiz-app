@@ -6,16 +6,37 @@ export function createQuiz(questions, difficulty, category) {
   let timer = null;
   let selectedAnswer = null;
   let confirmTimer = null;
+  let timeLeft = 20;
+  let isTimedOut = false;
 
   function startTimer() {
     const timerElement = document.getElementById("timer");
-    let timeLeft = 20;
+    timeLeft = 20;
     timerElement.innerHTML = timeLeft;
+    isTimedOut = false;
 
     if (timer) {
       clearInterval(timer);
     }
 
+    timer = setInterval(() => {
+      timeLeft--;
+      timerElement.innerHTML = timeLeft;
+
+      if (timeLeft <= 0) {
+        handleTimeOut();
+      }
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    if (timer) {
+      clearInterval(timer);
+    }
+  }
+
+  function resumeTimer() {
+    const timerElement = document.getElementById("timer");
     timer = setInterval(() => {
       timeLeft--;
       timerElement.innerHTML = timeLeft;
@@ -48,7 +69,11 @@ export function createQuiz(questions, difficulty, category) {
 
     const answers = document.querySelectorAll(".answer");
     answers.forEach((answer) => {
-      answer.addEventListener("click", () => handleAnswer(answer));
+      answer.addEventListener("click", () => {
+        if (!isTimedOut) {
+          handleAnswer(answer);
+        }
+      });
     });
 
     startTimer();
@@ -66,10 +91,10 @@ export function createQuiz(questions, difficulty, category) {
     answers.forEach((a) => a.classList.remove("selected"));
     answerElement.classList.add("selected");
 
-    confirmTimer = setTimeout(() => {
-      clearInterval(timer);
+    pauseTimer();
 
-      const confirmed = confirm(`Do you want to confirm ${selectedAnswer} is your answer?`);
+    confirmTimer = setTimeout(() => {
+      const confirmed = confirm("Do you want to confirm this answer?");
 
       if (confirmed) {
         const isCorrect = selectedAnswer === currentQuestion.correct_answer;
@@ -96,13 +121,14 @@ export function createQuiz(questions, difficulty, category) {
       } else {
         answers.forEach((a) => a.classList.remove("selected"));
         selectedAnswer = null;
-        startTimer();
+        resumeTimer();
       }
     }, 2000);
   }
 
   function handleTimeOut() {
     clearInterval(timer);
+    isTimedOut = true;
 
     const answers = document.querySelectorAll(".answer");
     const currentQuestion = questions[currentQuestionIndex];
